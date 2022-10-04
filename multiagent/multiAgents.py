@@ -43,6 +43,7 @@ class ReflexAgent(Agent):
 
         # Choose one of the best actions
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
+        # print(scores)
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
@@ -73,33 +74,21 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        "*** YOUR CODE HERE ***"
-        distFood = 0
-        distGhost = 0
+        foodDist = 0;
+        for food in newFood.asList():
+            dist = util.manhattanDistance(newPos, food)
+            foodDist += util.manhattanDistance(newPos, food)
 
-        for food in newFood:
-            distFood += util.manhattanDistance(newPos, food)
 
-        for ghost in newGhostStates:
-            distGhost += util.manhattanDistance(newPos, ghost.getPosition())
 
-        # for ghostState in newGhostStates:
-        #     print("ghoststate: ", ghostState)
-
-        # if newPos in currentGameState.getWalls():
-        #     return -10000000
-
-        # if not successorGameState.AgentState:
-        #     print("true")
-        # for ghostState in newGhostStates:
-        #     if not ghostState.isPacman:
-        #         print("true")
+        gdist = 0
+        for g in newGhostStates:
+            gdist += util.manhattanDistance(newPos, g.getPosition())
 
         if newPos == currentGameState.getPacmanPosition():
-            return -10000000000
+            return -10000
+        return min(foodDist, gdist)
 
-        # if distFood <= distGhost:
-        return successorGameState.getScore()
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -136,6 +125,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
     Your minimax agent (question 2)
     """
 
+    IS_PACMAN = True
+
     def getAction(self, gameState):
         """
         Returns the minimax action from the current gameState using self.depth
@@ -160,7 +151,62 @@ class MinimaxAgent(MultiAgentSearchAgent):
         Returns whether or not the game state is a losing state
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # gameState.getPacmanPosition()
+        return MinimaxAgent.value(self, gameState, True)
+
+
+    def value(self, state, isMaxAgent):
+        if state.isWin() or state.isLose():
+            return scoreEvaluationFunction(state)
+
+        if isMaxAgent:
+            return self.maxValue(state, False)
+        else:
+            return self.minValue(state, True)
+
+    def maxValue(self, state, isMaxAgent):
+        v = -100000000000
+        if isMaxAgent:
+            legalActions = state.getLegalActions(0)
+        else:
+            legalActions = state.getLegalActions(1)
+
+        # Get max value of each successor
+        for action in legalActions:
+            if isMaxAgent:
+                v = max(v, self.value(state.generateSuccessor(0, action), isMaxAgent))
+            else:
+                v = max(v, self.value(state.generateSuccessor(1, action), isMaxAgent))
+
+            if isMaxAgent:
+                isMaxAgent = False
+            else:
+                isMaxAgent = True
+
+        return v
+
+    def minValue(self, state, isMaxAgent):
+        v = 100000000000
+
+        if isMaxAgent:
+            legalActions = state.getLegalActions(0)
+        else:
+            legalActions = state.getLegalActions(1)
+
+        # Get min value of each successor
+        for action in legalActions:
+            if isMaxAgent:
+                v = min(v, self.value(state.generateSuccessor(0, action), isMaxAgent))
+            else:
+                v = min(v, self.value(state.generateSuccessor(1, action), isMaxAgent))
+
+            if isMaxAgent:
+                isMaxAgent = False
+            else:
+                isMaxAgent = True
+        return v
+
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
