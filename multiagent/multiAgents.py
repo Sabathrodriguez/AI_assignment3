@@ -79,15 +79,14 @@ class ReflexAgent(Agent):
             dist = util.manhattanDistance(newPos, food)
             foodDist += util.manhattanDistance(newPos, food)
 
-
-
         gdist = 0
         for g in newGhostStates:
             gdist += util.manhattanDistance(newPos, g.getPosition())
 
         if newPos == currentGameState.getPacmanPosition():
-            return -10000
-        return min(foodDist, gdist)
+            return -10000000000
+        return successorGameState.getScore()
+        # return min(foodDist, gdist)
 
 
 def scoreEvaluationFunction(currentGameState):
@@ -152,59 +151,93 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         # gameState.getPacmanPosition()
-        return MinimaxAgent.value(self, gameState, True)
 
 
-    def value(self, state, isMaxAgent):
-        if state.isWin() or state.isLose():
-            return scoreEvaluationFunction(state)
+        return MinimaxAgent.value(self, gameState, True, self.depth)[1]
+
+
+    def value(self, state, isMaxAgent, depth):
+        if depth == 0:
+            return self.evaluationFunction(state)
 
         if isMaxAgent:
-            return self.maxValue(state, False)
+            return self.maxValue(state, depth - 1)
         else:
-            return self.minValue(state, True)
+            return self.minValue(state, depth - 1)
 
-    def maxValue(self, state, isMaxAgent):
+
+    def maxValue(self, state, depth):
         v = -100000000000
-        if isMaxAgent:
-            legalActions = state.getLegalActions(0)
-        else:
-            legalActions = state.getLegalActions(1)
 
+        legalActions = state.getLegalActions(self.index)
+        bestAction = None
         # Get max value of each successor
         for action in legalActions:
-            if isMaxAgent:
-                v = max(v, self.value(state.generateSuccessor(0, action), isMaxAgent))
-            else:
-                v = max(v, self.value(state.generateSuccessor(1, action), isMaxAgent))
+            nextActionValue = self.value(state.generateSuccessor(self.index, action), False, depth - 1)
+            if nextActionValue > v:
+                v = nextActionValue
+                bestAction = action
+        return v, bestAction
 
-            if isMaxAgent:
-                isMaxAgent = False
-            else:
-                isMaxAgent = True
 
-        return v
-
-    def minValue(self, state, isMaxAgent):
+    def minValue(self, state, depth):
         v = 100000000000
+        mini = -10000000000
 
-        if isMaxAgent:
-            legalActions = state.getLegalActions(0)
-        else:
-            legalActions = state.getLegalActions(1)
-
+        legalActions = state.getLegalActions(self.index)
         # Get min value of each successor
         for action in legalActions:
-            if isMaxAgent:
-                v = min(v, self.value(state.generateSuccessor(0, action), isMaxAgent))
-            else:
-                v = min(v, self.value(state.generateSuccessor(1, action), isMaxAgent))
+            mini = self.value(state.generateSuccessor(self.index, action), True, depth - 1)
+            bestAction = action
+            if mini < v:
+                v = mini
 
-            if isMaxAgent:
-                isMaxAgent = False
-            else:
-                isMaxAgent = True
-        return v
+        return mini
+
+
+
+
+    # def maxValue(self, state, isMaxAgent):
+    #     v = -100000000000
+    #     if isMaxAgent:
+    #         legalActions = state.getLegalActions(0)
+    #     else:
+    #         legalActions = state.getLegalActions(1)
+    #
+    #     # Get max value of each successor
+    #     for action in legalActions:
+    #         if isMaxAgent:
+    #             v = max(v, self.value(state.generateSuccessor(0, action), isMaxAgent))
+    #         else:
+    #             v = max(v, self.value(state.generateSuccessor(1, action), isMaxAgent))
+    #
+    #         if isMaxAgent:
+    #             isMaxAgent = False
+    #         else:
+    #             isMaxAgent = True
+    #
+    #     return v
+
+    # def minValue(self, state, isMaxAgent):
+    #     v = 100000000000
+    #
+    #     if isMaxAgent:
+    #         legalActions = state.getLegalActions(0)
+    #     else:
+    #         legalActions = state.getLegalActions(1)
+    #
+    #     # Get min value of each successor
+    #     for action in legalActions:
+    #         if isMaxAgent:
+    #             v = min(v, self.value(state.generateSuccessor(0, action), isMaxAgent))
+    #         else:
+    #             v = min(v, self.value(state.generateSuccessor(1, action), isMaxAgent))
+    #
+    #         if isMaxAgent:
+    #             isMaxAgent = False
+    #         else:
+    #             isMaxAgent = True
+    #     return v
 
 
 
