@@ -280,7 +280,60 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def minValue(state, agentIndex, depth, alpha, beta):
+            minimumValue = float('inf')  # I initialize minimumValue as the pseudocode does.
+            agentTotalCount = gameState.getNumAgents()
+            legalActions = state.getLegalActions(agentIndex)
+
+            if not legalActions:
+                return self.evaluationFunction(state)
+
+            for action in legalActions:  # I take this for-loop out so we can update alpha/beta in the for-loop, i.e., update alpha/beta for each action.
+                if agentIndex == agentTotalCount - 1:
+                    minimumValue = min(minimumValue,
+                                       maxValue(state.generateSuccessor(agentIndex, action), 0, depth + 1, alpha, beta)[
+                                           0])  # I update the depth here (depth+1) because the instruction says "A single search py is considered to be one Pacman move and all the ghosts' responses." That is, the max layer and min layer should be considered as the same depth, and the depth should be update when moving from min to max. I return the maxValue() function in this getAction() function.
+
+                else:
+                    minimumValue = min(minimumValue,
+                                       minValue(state.generateSuccessor(agentIndex, action), agentIndex + 1, depth,
+                                                alpha, beta))
+                if minimumValue < alpha:
+                    return minimumValue
+                beta = min(beta, minimumValue)
+            return minimumValue
+
+            # return minimumValue
+
+        def maxValue(state, agentIndex, depth, alpha, beta):
+            agentIndex = 0
+            best_action = None  # Initialize best_action so we can keep track of Pacman's optimal action as we update the value.
+            maximumValue = -float('inf')  # Initialize maximumValue as the pseudocode does.
+            legalActions = state.getLegalActions(agentIndex)
+
+            if depth == self.depth or state.isWin() or state.isLose():
+                return self.evaluationFunction(state), None
+
+            for action in legalActions:
+
+                new_value = minValue(state.generateSuccessor(agentIndex, action), agentIndex + 1, depth, alpha, beta)
+                if new_value > maximumValue:
+                    maximumValue = new_value
+                    best_action = action  # best_action is updated here.
+
+                if maximumValue > beta:
+                    return maximumValue, best_action
+
+                alpha = max(alpha, maximumValue)
+            return maximumValue, best_action
+
+        # actions = gameState.getLegalActions(0)
+        # allActions = {}
+        # for action in actions:
+        #    allActions[action] = minValue(gameState.generateSuccessor(0, action), 1, 1, -float('inf'), float('inf'))
+
+        return maxValue(gameState, 0, 0, -float('inf'), float('inf'))[1]  # I return the
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
