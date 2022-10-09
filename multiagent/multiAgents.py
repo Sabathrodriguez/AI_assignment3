@@ -348,7 +348,54 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def expValue(state, agentIndex, depth):
+            agentTotalCount = gameState.getNumAgents()
+            legalActions = state.getLegalActions(agentIndex)
+            minimumValue = 0
+
+            if not legalActions:
+                return self.evaluationFunction(state)
+
+            if agentIndex == agentTotalCount-1:
+                for action in legalActions:
+                    tempArr = []
+                    for i in range(len(legalActions)):
+                        tempArr.append(1 / len(legalActions))
+
+                    p = util.getProbability(action, tempArr, legalActions)
+                    minimumValue += p * maxValue(state.generateSuccessor(agentIndex, action), agentIndex, depth)
+                # minimumValue = p * (maxValue(state.generateSuccessor(agentIndex, action), agentIndex, depth) for action in legalActions)
+            else:
+                for action in legalActions:
+                    tempArr = []
+                    for i in range(len(legalActions)):
+                        tempArr.append(1/len(legalActions))
+
+                    p = util.getProbability(action, tempArr, legalActions)
+                    minimumValue += p * expValue(state.generateSuccessor(agentIndex, action), agentIndex + 1, depth)
+                # minimumValue = p * (expValue(state.generateSuccessor(agentIndex, action), agentIndex + 1, depth) for action in legalActions)
+            return minimumValue
+
+
+        def maxValue(state, agentIndex, depth):
+            agentIndex = 0
+            legalActions = state.getLegalActions(agentIndex)
+
+            if not legalActions or depth == self.depth:
+                return self.evaluationFunction(state)
+
+            maximumValue = max(expValue(state.generateSuccessor(agentIndex, action), agentIndex+1, depth+1) for action in legalActions)
+
+            return maximumValue
+
+        actions = gameState.getLegalActions(0)
+        allActions = {}
+        for action in actions:
+            allActions[action] = expValue(gameState.generateSuccessor(0, action), 1, 1)
+
+        return max(allActions, key=allActions.get)
+
 
 def betterEvaluationFunction(currentGameState):
     """
