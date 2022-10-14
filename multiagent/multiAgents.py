@@ -67,27 +67,36 @@ class ReflexAgent(Agent):
         Print out these variables to see what you're getting, then combine them
         to create a masterful evaluation function.
         """
-        # Useful information you can extract from a GameState (pacman.py)
+        # # Useful information you can extract from a GameState (pacman.py)
         successorGameState = currentGameState.generatePacmanSuccessor(action)
         newPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood()
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
-
-        # foodDist = 0;
-        # for food in newFood.asList():
-        #     dist = util.manhattanDistance(newPos, food)
-        #     foodDist += util.manhattanDistance(newPos, food)
         #
-        # gdist = 0
-        # for g in newGhostStates:
-        #     gdist += util.manhattanDistance(newPos, g.getPosition())
-
+        # # foodDist = 0;
+        # # for food in newFood.asList():
+        # #     dist = util.manhattanDistance(newPos, food)
+        # #     foodDist += util.manhattanDistance(newPos, food)
+        # #
+        # # gdist = 0
+        # # for g in newGhostStates:
+        # #     gdist += util.manhattanDistance(newPos, g.getPosition())
+        #
         if newPos == currentGameState.getPacmanPosition():
             return -10000000000
         return successorGameState.getScore()
         # return min(foodDist, gdist)
 
+        # score = 0
+        # score += currentGameState.getScore() - currentGameState.getNumFood()
+
+        # ghostDistance = 0
+        # for pos in currentGameState.getGhostPositions():
+        #     ghostDistance += util.manhattanDistance(currentGameState.getPacmanPosition(), pos)
+        #
+        # score -= ghostDistance
+#
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -397,15 +406,99 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         return max(allActions, key=allActions.get)
 
 
+def ucs(state, maxDepth):
+    visited = []
+    fringe = util.PriorityQueue()
+    fringe.push((state.getPacmanPosition(), [], state.getScore(), 1), state.getScore())
+
+    while not fringe.isEmpty():
+        node, action, score, depth = fringe.pop()
+
+        if state.isWin() or state.isLose() or depth == maxDepth:
+            return score
+
+        if node not in visited:
+            visited.append(node)
+            for legalAction in state.getLegalActions():
+                child = state.generateSuccessor(0, legalAction)
+                fringe.push((child.getPacmanPosition(), legalAction, child.getScore() + score, depth+1), child.getScore() + score)
+
 def betterEvaluationFunction(currentGameState):
     """
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
     evaluation function (question 5).
-
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # print("score: ", currentGameState.getScore()**1)
 
+    # def minValue(state, agentIndex, depth):
+    #     agentTotalCount = currentGameState.getNumAgents()
+    #     legalActions = state.getLegalActions(agentIndex)
+    #
+    #     if not legalActions:
+    #         return currentGameState.getScore()
+    #
+    #     if agentIndex == agentTotalCount - 1:
+    #         minimumValue = min(
+    #             maxValue(state.generateSuccessor(agentIndex, action), agentIndex, depth) for action in legalActions)
+    #     else:
+    #         minimumValue = min(
+    #             minValue(state.generateSuccessor(agentIndex, action), agentIndex + 1, depth) for action in legalActions)
+    #     return minimumValue
+    #
+    # def maxValue(state, agentIndex, depth):
+    #     agentIndex = 0
+    #     legalActions = state.getLegalActions(agentIndex)
+    #
+    #     if not legalActions:
+    #         return currentGameState.getScore()
+    #
+    #     maximumValue = max(
+    #         minValue(state.generateSuccessor(agentIndex, action), agentIndex + 1, depth + 1) for action in legalActions)
+    #
+    #     return maximumValue
+    #
+    # actions = currentGameState.getLegalActions(0)
+    # allActions = {}
+    # for action in actions:
+    #     allActions[action] = minValue(currentGameState.generateSuccessor(0, action), 1, 1)
+    #
+    # return max(allActions, key=allActions.get)
+
+    def findPathToClosestDot(state, maxDepth):
+        currPosition = state.getPacmanPosition()
+
+        frontier = util.Stack()
+        frontier.push((currPosition, [], state.getScore(), 1))
+
+        reached = []
+
+        while not frontier.isEmpty():
+            tempNode, action, score, depth = frontier.pop()
+
+            if state.isWin() or state.isLose() or depth == maxDepth:
+                return score
+
+            if tempNode not in reached:
+                reached.append(tempNode)
+
+                for legalActions in state.getLegalActions():
+                    child = state.generateSuccessor(0, legalActions)
+                    frontier.push((child.getPacmanPosition(), action, child.getScore() + score, depth + 1))
+
+    # return findPathToClosestDot(currentGameState, 2)
+
+    # return ucs(currentGameState, 2)
+    score = 0
+    score += currentGameState.getScore() - currentGameState.getNumFood()
+
+    ghostDistance = 0
+    for pos in currentGameState.getGhostPositions():
+        ghostDistance += util.manhattanDistance(currentGameState.getPacmanPosition(), pos)
+
+    score -= ghostDistance
+
+    return score
 # Abbreviation
 better = betterEvaluationFunction
